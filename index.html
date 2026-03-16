@@ -1,0 +1,1773 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CS Lab — خوارزميات البحث والترتيب</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060810;
+  --bg2: #0d1117;
+  --bg3: #141c2a;
+  --panel: #0f1923;
+  --border: #1e2d40;
+  --cyan: #00d4ff;
+  --green: #00ff88;
+  --orange: #ff6b35;
+  --purple: #a855f7;
+  --yellow: #ffd60a;
+  --red: #ff3b3b;
+  --text: #e2e8f0;
+  --text2: #8899aa;
+  --glow-cyan: 0 0 20px rgba(0,212,255,0.4);
+  --glow-green: 0 0 20px rgba(0,255,136,0.4);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: 'Cairo', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* GRID BG */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed;
+  top: 0; right: 0;
+  width: 260px; height: 100vh;
+  background: var(--panel);
+  border-left: 1px solid var(--border);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebar-logo {
+  padding: 24px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo h1 {
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  letter-spacing: 1px;
+}
+.sidebar-logo p { font-size: 0.72rem; color: var(--text2); margin-top: 4px; }
+
+.nav-section { padding: 16px 12px 8px; }
+.nav-section-title {
+  font-size: 0.65rem;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  padding: 0 8px;
+  margin-bottom: 6px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.82rem;
+  color: var(--text2);
+  border: 1px solid transparent;
+  margin-bottom: 2px;
+}
+.nav-item:hover { background: rgba(0,212,255,0.07); color: var(--text); }
+.nav-item.active {
+  background: rgba(0,212,255,0.12);
+  border-color: rgba(0,212,255,0.3);
+  color: var(--cyan);
+}
+.nav-item .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+/* MAIN */
+.main {
+  margin-right: 260px;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* PAGE */
+.page { display: none; padding: 40px 48px; animation: fadeIn 0.3s ease; }
+.page.active { display: block; }
+
+@keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+.page-header { margin-bottom: 36px; }
+.page-header h2 {
+  font-size: 2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, var(--cyan), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+.page-header p { color: var(--text2); font-size: 0.9rem; line-height: 1.7; }
+
+/* CARDS GRID */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+.card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: border-color 0.2s;
+}
+.card:hover { border-color: rgba(0,212,255,0.3); }
+.card h3 { font-size: 0.95rem; font-weight: 700; color: var(--cyan); margin-bottom: 10px; }
+.card p { font-size: 0.82rem; color: var(--text2); line-height: 1.7; }
+
+/* CODE BLOCK */
+pre {
+  background: #050a0f;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: #a8d8ea;
+  margin: 16px 0;
+}
+.kw { color: #c792ea; }
+.fn { color: #82aaff; }
+.num { color: var(--yellow); }
+.cm { color: #546e7a; font-style: italic; }
+.str { color: var(--green); }
+.type { color: #ffcb6b; }
+
+/* INTERACTIVE SECTION */
+.interactive {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 28px;
+  margin: 20px 0;
+}
+.interactive h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* CONTROLS */
+.controls {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+.btn {
+  padding: 9px 20px;
+  border-radius: 8px;
+  border: 1px solid;
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+.btn-cyan { background: rgba(0,212,255,0.1); border-color: var(--cyan); color: var(--cyan); }
+.btn-cyan:hover { background: rgba(0,212,255,0.2); box-shadow: var(--glow-cyan); }
+.btn-green { background: rgba(0,255,136,0.1); border-color: var(--green); color: var(--green); }
+.btn-green:hover { background: rgba(0,255,136,0.2); box-shadow: var(--glow-green); }
+.btn-orange { background: rgba(255,107,53,0.1); border-color: var(--orange); color: var(--orange); }
+.btn-orange:hover { background: rgba(255,107,53,0.2); }
+.btn-purple { background: rgba(168,85,247,0.1); border-color: var(--purple); color: var(--purple); }
+.btn-purple:hover { background: rgba(168,85,247,0.2); }
+
+input[type="text"], input[type="number"] {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  color: var(--text);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus { border-color: var(--cyan); }
+
+/* ARRAY VISUALIZATION */
+.array-viz {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  min-height: 70px;
+  align-items: flex-end;
+}
+
+.arr-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.arr-box {
+  width: 48px;
+  height: 48px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  transition: all 0.3s ease;
+}
+
+.arr-idx { font-size: 0.62rem; color: var(--text2); }
+
+.arr-box.comparing { background: rgba(255,107,53,0.2); border-color: var(--orange); color: var(--orange); }
+.arr-box.swapping { background: rgba(255,60,60,0.2); border-color: var(--red); color: var(--red); transform: scale(1.15); }
+.arr-box.sorted { background: rgba(0,255,136,0.12); border-color: var(--green); color: var(--green); }
+.arr-box.pivot { background: rgba(168,85,247,0.2); border-color: var(--purple); color: var(--purple); }
+.arr-box.found { background: rgba(0,212,255,0.2); border-color: var(--cyan); color: var(--cyan); transform: scale(1.2); }
+.arr-box.current { background: rgba(255,214,10,0.15); border-color: var(--yellow); color: var(--yellow); }
+
+/* LOG */
+.log-box {
+  background: #050a0f;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 18px;
+  margin-top: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  min-height: 80px;
+  max-height: 160px;
+  overflow-y: auto;
+  line-height: 1.9;
+}
+.log-box .log-line { color: var(--text2); }
+.log-box .log-line.highlight { color: var(--cyan); }
+.log-box .log-line.success { color: var(--green); }
+.log-box .log-line.warn { color: var(--orange); }
+
+/* TREE VISUALIZATION */
+.tree-container {
+  width: 100%;
+  overflow-x: auto;
+  padding: 10px 0;
+}
+
+svg.tree-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+/* STEP COUNTER */
+.step-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+  font-size: 0.8rem;
+}
+.step-badge {
+  background: rgba(0,212,255,0.15);
+  border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 20px;
+  padding: 4px 14px;
+  color: var(--cyan);
+  font-size: 0.75rem;
+}
+
+/* THEORY BOX */
+.theory {
+  background: rgba(0,212,255,0.04);
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin: 16px 0;
+}
+.theory h4 { color: var(--cyan); font-size: 0.85rem; margin-bottom: 8px; }
+.theory p, .theory li { font-size: 0.82rem; color: var(--text2); line-height: 1.8; }
+.theory ul { padding-right: 18px; }
+.theory li { margin-bottom: 4px; }
+
+/* BADGE */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin: 3px;
+}
+.badge-cyan { background: rgba(0,212,255,0.12); color: var(--cyan); border: 1px solid rgba(0,212,255,0.3); }
+.badge-green { background: rgba(0,255,136,0.12); color: var(--green); border: 1px solid rgba(0,255,136,0.3); }
+.badge-orange { background: rgba(255,107,53,0.12); color: var(--orange); border: 1px solid rgba(255,107,53,0.3); }
+
+/* TABS */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 0; }
+.tab-btn {
+  padding: 9px 18px;
+  background: none;
+  border: none;
+  color: var(--text2);
+  cursor: pointer;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.82rem;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  margin-bottom: -1px;
+}
+.tab-btn.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* SEPARATOR */
+.sep { height: 1px; background: var(--border); margin: 28px 0; }
+
+/* RECURSION STACK */
+.stack-viz {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  margin: 10px 0;
+  min-height: 60px;
+}
+.stack-frame {
+  background: rgba(168,85,247,0.1);
+  border: 1px solid rgba(168,85,247,0.3);
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--purple);
+  animation: slideIn 0.2s ease;
+}
+@keyframes slideIn { from { opacity:0; transform:translateX(10px); } to { opacity:1; transform:translateX(0); } }
+
+/* NODE TREE SVG STYLES */
+.tree-node-circle { stroke-width: 2; }
+.tree-node-text { font-family: 'Cairo', sans-serif; font-weight: 700; }
+.tree-edge { stroke-width: 1.5; }
+
+/* SEARCH HIGHLIGHT */
+.search-mid { background: rgba(168,85,247,0.2); border-color: var(--purple); color: var(--purple); }
+.search-low { background: rgba(0,255,136,0.12); border-color: rgba(0,255,136,0.4); }
+.search-high { background: rgba(0,255,136,0.12); border-color: rgba(0,255,136,0.4); }
+
+hr.dim { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+
+/* RESPONSIVE */
+@media (max-width: 900px) {
+  .sidebar { width: 220px; }
+  .main { margin-right: 220px; }
+  .page { padding: 24px; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <h1>⚡ CS Lab</h1>
+    <p>خوارزميات البحث والترتيب — مرحلة ثانية</p>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">الأساسيات</div>
+    <div class="nav-item active" onclick="goto('home')">
+      <span class="icon">🏠</span> الصفحة الرئيسية
+    </div>
+    <div class="nav-item" onclick="goto('recursion')">
+      <span class="icon">🔄</span> الاستدعاء الذاتي
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">هياكل البيانات</div>
+    <div class="nav-item" onclick="goto('graph')">
+      <span class="icon">🕸️</span> الجراف Graph
+    </div>
+    <div class="nav-item" onclick="goto('tree')">
+      <span class="icon">🌳</span> الشجرة Tree
+    </div>
+    <div class="nav-item" onclick="goto('binary-tree')">
+      <span class="icon">🌲</span> الشجرة الثنائية
+    </div>
+    <div class="nav-item" onclick="goto('bst')">
+      <span class="icon">🔍</span> شجرة BST
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">خوارزميات الترتيب</div>
+    <div class="nav-item" onclick="goto('bubble')">
+      <span class="icon">🫧</span> Bubble Sort
+    </div>
+    <div class="nav-item" onclick="goto('insertion')">
+      <span class="icon">📥</span> Insertion Sort
+    </div>
+    <div class="nav-item" onclick="goto('quick')">
+      <span class="icon">⚡</span> Quick Sort
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-title">خوارزميات البحث</div>
+    <div class="nav-item" onclick="goto('linear-search')">
+      <span class="icon">🔎</span> Sequential Search
+    </div>
+    <div class="nav-item" onclick="goto('binary-search')">
+      <span class="icon">⚡</span> Binary Search
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+<!-- HOME PAGE -->
+<div class="page active" id="page-home">
+  <div class="page-header">
+    <h2>⚡ CS Algorithms Lab</h2>
+    <p>منصة تعليمية تفاعلية لمادة خوارزميات البحث والترتيب — كلية علوم الحاسوب / الجامعة التكنولوجية</p>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:24px;">
+    <div class="card" style="cursor:pointer;border-color:rgba(0,212,255,0.2);" onclick="goto('recursion')">
+      <h3>🔄 الاستدعاء الذاتي</h3>
+      <p>Recursion — المضروب، فيبوناتشي، القوة. شاهد كيف تستدعي الدالة نفسها خطوة بخطوة.</p>
+      <div style="margin-top:12px;"><span class="badge badge-cyan">تفاعلي</span><span class="badge badge-green">مرئي</span></div>
+    </div>
+    <div class="card" style="cursor:pointer;" onclick="goto('bst')">
+      <h3>🔍 شجرة BST</h3>
+      <p>أدخل أرقامك وشاهد بناء شجرة البحث الثنائية، الإدراج، الحذف، والاجتياز.</p>
+      <div style="margin-top:12px;"><span class="badge badge-cyan">تفاعلي</span></div>
+    </div>
+    <div class="card" style="cursor:pointer;" onclick="goto('quick')">
+      <h3>⚡ Quick Sort</h3>
+      <p>ترتيب سريع مع تصوير كامل لكل مقارنة وتبادل مع اختيار المحور.</p>
+      <div style="margin-top:12px;"><span class="badge badge-orange">خوارزمية</span></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <h3>📚 محتوى الملزمة</h3>
+      <p style="color:var(--text);font-size:0.85rem;line-height:2;">
+        ✅ الاستدعاء الذاتي (Recursion)<br>
+        ✅ الجراف (Graph) ومصطلحاته<br>
+        ✅ الأشجار (Trees) وأنواعها<br>
+        ✅ الشجرة الثنائية (Binary Tree)<br>
+        ✅ شجرة BST — إدراج / حذف<br>
+        ✅ Bubble, Insertion, Quick Sort<br>
+        ✅ Sequential & Binary Search
+      </p>
+    </div>
+    <div class="card">
+      <h3>🎯 كيف تستخدم المنصة؟</h3>
+      <p style="color:var(--text);font-size:0.85rem;line-height:2;">
+        1️⃣ اختر الموضوع من القائمة<br>
+        2️⃣ اقرأ الشرح النظري السريع<br>
+        3️⃣ شاهد كود C++ الحقيقي<br>
+        4️⃣ جرّب الخوارزمية تفاعلياً<br>
+        5️⃣ اضغط "خطوة بخطوة" لتفهم كل مرحلة<br>
+        6️⃣ غيّر المدخلات وجرّب مرات عديدة
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- RECURSION PAGE -->
+<div class="page" id="page-recursion">
+  <div class="page-header">
+    <h2>🔄 الاستدعاء الذاتي — Recursion</h2>
+    <p>الاستدعاء الذاتي هو قدرة الدالة على استدعاء نفسها. يحتاج لحالة أساسية (Base Case) لإيقاف التكرار.</p>
+  </div>
+
+  <div class="theory">
+    <h4>📖 المفهوم الأساسي</h4>
+    <ul>
+      <li><strong style="color:var(--cyan)">الحالة الأساسية (Base Case):</strong> الشرط الذي يوقف الاستدعاء — مثل n=0 في المضروب</li>
+      <li><strong style="color:var(--cyan)">الجزء الاستقرائي:</strong> الاستدعاء الذاتي بمعامل أصغر — factorial(n-1)</li>
+      <li>كل استدعاء يُحفظ في Stack حتى تُحل الحالة الأساسية ثم تُعاد القيم</li>
+    </ul>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('rec','factorial')">🔢 المضروب</button>
+    <button class="tab-btn" onclick="switchTab('rec','power')">💪 القوة</button>
+    <button class="tab-btn" onclick="switchTab('rec','fib')">🌀 فيبوناتشي</button>
+  </div>
+
+  <!-- FACTORIAL -->
+  <div class="tab-content active" id="rec-factorial">
+    <pre><span class="cm">// حساب مضروب n بالاستدعاء الذاتي</span>
+<span class="type">int</span> <span class="fn">factorial</span>(<span class="type">int</span> n)
+{
+    <span class="kw">if</span> (n &gt; <span class="num">1</span>)
+        <span class="kw">return</span> n * <span class="fn">factorial</span>(n - <span class="num">1</span>);  <span class="cm">// الجزء الاستقرائي</span>
+    <span class="kw">else</span>
+        <span class="kw">return</span> <span class="num">1</span>;                          <span class="cm">// الحالة الأساسية</span>
+}</pre>
+
+    <div class="interactive">
+      <h3>🧪 جرّب الآن — المضروب</h3>
+      <div class="controls">
+        <span style="color:var(--text2);font-size:0.82rem;">n =</span>
+        <input type="number" id="fact-n" value="5" min="0" max="12" style="width:70px;">
+        <button class="btn btn-cyan" onclick="runFactorial()">▶ احسب</button>
+        <button class="btn btn-purple" onclick="stepFactorial()">👣 خطوة بخطوة</button>
+        <button class="btn btn-orange" onclick="resetFactorial()">↺ إعادة</button>
+      </div>
+      <div class="step-info">
+        <span class="step-badge" id="fact-step">جاهز</span>
+        <span style="color:var(--text2);font-size:0.8rem;" id="fact-result"></span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text2);margin:8px 0;">Stack الاستدعاء:</div>
+      <div class="stack-viz" id="fact-stack"></div>
+      <div class="log-box" id="fact-log"><span class="log-line">اضغط "احسب" أو "خطوة بخطوة"...</span></div>
+    </div>
+  </div>
+
+  <!-- POWER -->
+  <div class="tab-content" id="rec-power">
+    <pre><span class="cm">// حساب x^m بالاستدعاء الذاتي</span>
+<span class="type">int</span> <span class="fn">power</span>(<span class="type">int</span> x, <span class="type">int</span> m)
+{
+    <span class="kw">if</span> (m == <span class="num">0</span>)
+        <span class="kw">return</span> <span class="num">1</span>;                          <span class="cm">// X^0 = 1 دائماً</span>
+    <span class="kw">else</span>
+        <span class="kw">return</span> x * <span class="fn">power</span>(x, m - <span class="num">1</span>);    <span class="cm">// X^m = X * X^(m-1)</span>
+}</pre>
+
+    <div class="interactive">
+      <h3>🧪 جرّب الآن — القوة</h3>
+      <div class="controls">
+        <span style="color:var(--text2);font-size:0.82rem;">x =</span>
+        <input type="number" id="pow-x" value="2" min="1" max="10" style="width:60px;">
+        <span style="color:var(--text2);font-size:0.82rem;">m =</span>
+        <input type="number" id="pow-m" value="5" min="0" max="10" style="width:60px;">
+        <button class="btn btn-cyan" onclick="runPower()">▶ احسب</button>
+      </div>
+      <div class="log-box" id="pow-log"><span class="log-line">اضغط "احسب"...</span></div>
+    </div>
+  </div>
+
+  <!-- FIBONACCI -->
+  <div class="tab-content" id="rec-fib">
+    <pre><span class="cm">// متتالية فيبوناتشي: F(n) = F(n-1) + F(n-2)</span>
+<span class="type">int</span> <span class="fn">fib</span>(<span class="type">int</span> n)
+{
+    <span class="kw">if</span> (n &lt;= <span class="num">1</span>)
+        <span class="kw">return</span> n;                           <span class="cm">// F(0)=0, F(1)=1</span>
+    <span class="kw">return</span> <span class="fn">fib</span>(n-<span class="num">1</span>) + <span class="fn">fib</span>(n-<span class="num">2</span>);           <span class="cm">// يستدعي نفسه مرتين</span>
+}</pre>
+
+    <div class="interactive">
+      <h3>🧪 جرّب الآن — فيبوناتشي</h3>
+      <div class="controls">
+        <span style="color:var(--text2);font-size:0.82rem;">n =</span>
+        <input type="number" id="fib-n" value="8" min="0" max="15" style="width:70px;">
+        <button class="btn btn-cyan" onclick="runFib()">▶ احسب</button>
+      </div>
+      <div class="log-box" id="fib-log"><span class="log-line">اضغط "احسب"...</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- GRAPH PAGE -->
+<div class="page" id="page-graph">
+  <div class="page-header">
+    <h2>🕸️ الجراف — Graph</h2>
+    <p>الجراف هو هيكل بيانات غير خطي يتكون من مجموعة رؤوس (Vertices) وحواف (Edges) تربطها.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card">
+      <h3>📐 التعريف الرياضي</h3>
+      <p style="color:var(--text);line-height:2.1;font-size:0.85rem;">
+        الجراف G = (V, E) حيث:<br>
+        • <strong style="color:var(--cyan)">V</strong> = مجموعة الرؤوس (Vertices/Nodes)<br>
+        • <strong style="color:var(--cyan)">E</strong> = مجموعة الحواف (Edges/Arcs)<br>
+        • كل حافة تربط رأسين: (startVertex, endVertex)
+      </p>
+    </div>
+    <div class="card">
+      <h3>🏷️ أنواع الجرافات</h3>
+      <p style="color:var(--text);line-height:2.1;font-size:0.85rem;">
+        • <strong style="color:var(--green)">Undirected:</strong> حواف غير موجهة (ثنائية الاتجاه)<br>
+        • <strong style="color:var(--orange)">Directed:</strong> حواف موجهة (أحادية الاتجاه)<br>
+        • <strong style="color:var(--cyan)">Connected:</strong> كل رأسين مرتبطان بمسار<br>
+        • <strong style="color:var(--red)">Disconnected:</strong> بعض الرؤوس منفصلة
+      </p>
+    </div>
+  </div>
+
+  <div class="interactive">
+    <h3>🎨 مرئي — جراف تفاعلي</h3>
+    <div class="controls">
+      <button class="btn btn-cyan" onclick="drawSampleGraph('undirected')">رسم غير موجه</button>
+      <button class="btn btn-orange" onclick="drawSampleGraph('directed')">رسم موجه</button>
+    </div>
+    <div class="tree-container">
+      <svg id="graph-svg" width="600" height="320" style="background:var(--bg2);border-radius:10px;border:1px solid var(--border);"></svg>
+    </div>
+    <div style="margin-top:14px;font-size:0.8rem;color:var(--text2);" id="graph-info">
+      اضغط أحد الأزرار لرسم مثال من الملزمة: V = {A,B,C,D,E}
+    </div>
+  </div>
+
+  <div class="theory">
+    <h4>📌 المصطلحات المهمة</h4>
+    <ul>
+      <li><strong style="color:var(--cyan)">Vertex (Node):</strong> عنصر بيانات منفرد في الجراف</li>
+      <li><strong style="color:var(--cyan)">Edge (Arc):</strong> الرابط بين رأسين، يُمثَّل كـ (A, B)</li>
+      <li><strong style="color:var(--green)">Degree:</strong> عدد الحواف المتصلة برأس معين</li>
+      <li><strong style="color:var(--orange)">Path:</strong> تسلسل من الرؤوس والحواف من نقطة لأخرى</li>
+    </ul>
+  </div>
+</div>
+
+<!-- TREE PAGE -->
+<div class="page" id="page-tree">
+  <div class="page-header">
+    <h2>🌳 الأشجار — Trees</h2>
+    <p>الشجرة هي جراف متصل لا يحتوي على دورات (Acyclic Connected Graph). إذا كان عدد العقد N فعدد الحواف N-1.</p>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:20px;">
+    <div class="card"><h3>🌱 Root</h3><p>العقدة الأولى، أصل الشجرة. كل شجرة لها root واحد فقط. عمقه = 0.</p></div>
+    <div class="card"><h3>👨‍👦 Parent / Child</h3><p>Parent = العقدة السابقة (الأم). Child = العقدة التابعة (الابن). كل عقد ما عدا الجذر هو Child.</p></div>
+    <div class="card"><h3>🍃 Leaf</h3><p>عقدة ليس لها أبناء. تُسمى أيضاً Terminal Node. ارتفاعها = 0.</p></div>
+    <div class="card"><h3>🤝 Siblings</h3><p>العقد التي لها نفس الأب تُسمى Siblings (أشقاء).</p></div>
+    <div class="card"><h3>📏 Degree</h3><p>عدد أبناء العقدة. Degree of Tree = أعلى درجة لأي عقدة في الشجرة.</p></div>
+    <div class="card"><h3>🏔️ Height / Depth</h3><p>Height: حواف من الورقة إلى العقدة (لأعلى). Depth: حواف من الجذر إلى العقدة (لأسفل).</p></div>
+  </div>
+
+  <div class="interactive">
+    <h3>🎨 مثال من الملزمة — شجرة بـ 11 عقدة</h3>
+    <div class="tree-container">
+      <svg id="tree-svg" width="680" height="280" style="background:var(--bg2);border-radius:10px;border:1px solid var(--border);"></svg>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:20px;flex-wrap:wrap;font-size:0.78rem;color:var(--text2);">
+      <span>🔵 <strong style="color:var(--cyan)">أزرق</strong> = عقدة عادية</span>
+      <span>🟢 <strong style="color:var(--green)">أخضر</strong> = عقدة أب</span>
+      <span>🟠 <strong style="color:var(--orange)">برتقالي</strong> = ورقة (Leaf)</span>
+    </div>
+  </div>
+</div>
+
+<!-- BINARY TREE PAGE -->
+<div class="page" id="page-binary-tree">
+  <div class="page-header">
+    <h2>🌲 الشجرة الثنائية — Binary Tree</h2>
+    <p>شجرة خاصة حيث كل عقدة لها على الأكثر ابنان: ابن أيسر وابن أيمن.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="card">
+      <h3>📐 خصائص رياضية</h3>
+      <p style="color:var(--text);line-height:2.2;font-size:0.85rem;">
+        • Max nodes في المستوى L = <strong style="color:var(--cyan)">2^L</strong><br>
+        • Max nodes في شجرة ارتفاعها h = <strong style="color:var(--cyan)">2^(h+1) - 1</strong><br>
+        • عدد الأوراق = <strong style="color:var(--green)">(عدد عقد بدرجة 2) + 1</strong>
+      </p>
+    </div>
+    <div class="card">
+      <h3>🗂️ طرق التمثيل</h3>
+      <p style="color:var(--text);line-height:2.2;font-size:0.85rem;">
+        • <strong style="color:var(--cyan)">Array:</strong> الجذر T[1]، ابن أيسر T[2i]، ابن أيمن T[2i+1]<br>
+        • <strong style="color:var(--green)">Linked List:</strong> كل عقدة = {Left | Data | Right}<br>
+        • المصفوفة تحتاج حجم <strong style="color:var(--orange)">2^(n+1)-1</strong>
+      </p>
+    </div>
+  </div>
+
+  <div class="interactive">
+    <h3>🚶 اجتياز الشجرة — Tree Traversal</h3>
+    <div class="theory" style="margin-bottom:16px;">
+      <h4>الأنواع الثلاثة</h4>
+      <ul>
+        <li><strong style="color:var(--cyan)">In-Order</strong>: يسار → جذر → يمين → ينتج ترتيباً تصاعدياً في BST</li>
+        <li><strong style="color:var(--orange)">Pre-Order</strong>: جذر → يسار → يمين → مفيد لنسخ الشجرة</li>
+        <li><strong style="color:var(--green)">Post-Order</strong>: يسار → يمين → جذر → مفيد لحذف الشجرة</li>
+      </ul>
+    </div>
+    <div class="controls">
+      <button class="btn btn-cyan" onclick="traverseTree('inorder')">🔵 In-Order</button>
+      <button class="btn btn-orange" onclick="traverseTree('preorder')">🟠 Pre-Order</button>
+      <button class="btn btn-green" onclick="traverseTree('postorder')">🟢 Post-Order</button>
+    </div>
+    <div class="tree-container">
+      <svg id="bt-svg" width="640" height="260" style="background:var(--bg2);border-radius:10px;border:1px solid var(--border);"></svg>
+    </div>
+    <div class="log-box" id="bt-log" style="margin-top:14px;"><span class="log-line">اختر نوع الاجتياز...</span></div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="interactive">
+    <h3>🔢 تمثيل المصفوفة — Array Representation</h3>
+    <p style="font-size:0.82rem;color:var(--text2);margin-bottom:16px;">مثال الملزمة: الجذر A في T[1]، ابن أيسر B في T[2]، ابن أيمن C في T[3]...</p>
+    <div style="display:flex;gap:0;margin:10px 0;">
+      <div id="array-rep" style="display:flex;gap:3px;flex-wrap:wrap;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BST PAGE -->
+<div class="page" id="page-bst">
+  <div class="page-header">
+    <h2>🔍 شجرة البحث الثنائية — BST</h2>
+    <p>شجرة ثنائية خاصة: كل قيم الشجرة الفرعية اليسرى أصغر من الجذر، وكل قيم الشجرة الفرعية اليمنى أكبر منه.</p>
+  </div>
+
+  <div class="interactive">
+    <h3>🏗️ ابنِ شجرة BST الخاصة بك</h3>
+    <div class="controls">
+      <input type="number" id="bst-val" placeholder="أدخل رقماً" style="width:130px;">
+      <button class="btn btn-green" onclick="bstInsert()">➕ إدراج</button>
+      <button class="btn btn-orange" onclick="bstDelete()">🗑️ حذف</button>
+      <button class="btn btn-cyan" onclick="bstReset()">↺ إعادة</button>
+      <button class="btn btn-purple" onclick="bstLoadExample()">📋 مثال الملزمة</button>
+    </div>
+    <div class="controls" style="margin-top:8px;">
+      <button class="btn btn-cyan" onclick="bstTraverse('inorder')" style="font-size:0.75rem;padding:7px 14px;">In-Order</button>
+      <button class="btn btn-orange" onclick="bstTraverse('preorder')" style="font-size:0.75rem;padding:7px 14px;">Pre-Order</button>
+      <button class="btn btn-green" onclick="bstTraverse('postorder')" style="font-size:0.75rem;padding:7px 14px;">Post-Order</button>
+    </div>
+    <div class="tree-container" style="min-height:280px;">
+      <svg id="bst-svg" width="760" height="320" style="background:var(--bg2);border-radius:10px;border:1px solid var(--border);"></svg>
+    </div>
+    <div class="log-box" id="bst-log" style="margin-top:12px;"><span class="log-line">أدخل أرقاماً لبناء الشجرة، أو اضغط "مثال الملزمة"...</span></div>
+  </div>
+
+  <div class="sep"></div>
+
+  <div class="theory">
+    <h4>🗑️ حالات الحذف في BST</h4>
+    <ul>
+      <li><strong style="color:var(--green)">Case 1 — ورقة:</strong> احذف مباشرة وضع الأب → NULL</li>
+      <li><strong style="color:var(--cyan)">Case 2 — ابن واحد:</strong> ربط الأب مباشرة بالابن</li>
+      <li><strong style="color:var(--orange)">Case 3 — ابنان:</strong> استبدل بأكبر قيمة في الشجرة اليسرى، أو أصغر قيمة في اليمنى</li>
+    </ul>
+  </div>
+
+  <pre><span class="cm">// إدراج في BST — C++</span>
+<span class="kw">struct</span> <span class="type">Node</span> {
+    <span class="type">int</span> data;
+    <span class="type">Node</span>* left;
+    <span class="type">Node</span>* right;
+};
+
+<span class="type">Node</span>* <span class="fn">insert</span>(<span class="type">Node</span>* root, <span class="type">int</span> val) {
+    <span class="kw">if</span> (root == <span class="num">nullptr</span>) <span class="kw">return new</span> <span class="fn">Node</span>(val);
+    <span class="kw">if</span> (val &lt; root-&gt;data)
+        root-&gt;left = <span class="fn">insert</span>(root-&gt;left, val);
+    <span class="kw">else</span>
+        root-&gt;right = <span class="fn">insert</span>(root-&gt;right, val);
+    <span class="kw">return</span> root;
+}</pre>
+</div>
+
+<!-- BUBBLE SORT PAGE -->
+<div class="page" id="page-bubble">
+  <div class="page-header">
+    <h2>🫧 Bubble Sort — الترتيب الفقاعي</h2>
+    <p>يقارن كل عنصرين متجاورين ويبدّلهما إذا كانا بالترتيب الخاطئ. الأكبر "يطفو" لأعلى في كل جولة.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="theory">
+      <h4>📊 التعقيد الزمني</h4>
+      <ul>
+        <li>أسوأ حالة: <strong style="color:var(--red)">O(n²)</strong></li>
+        <li>أفضل حالة: <strong style="color:var(--green)">O(n)</strong> مع التحسين</li>
+        <li>حالة متوسطة: <strong style="color:var(--orange)">O(n²)</strong></li>
+      </ul>
+    </div>
+    <div class="theory">
+      <h4>🔄 كيف يعمل؟</h4>
+      <ul>
+        <li>حلقتان متداخلتان: i و j</li>
+        <li>كل جولة خارجية تضع أكبر عنصر في مكانه</li>
+        <li>n-1 جولة كافية لترتيب n عنصر</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><span class="type">void</span> <span class="fn">bubbleSort</span>(<span class="type">int</span> data[], <span class="type">int</span> n)
+{
+    <span class="type">int</span> temp;
+    <span class="kw">for</span> (<span class="type">int</span> i = <span class="num">0</span>; i &lt; (n-<span class="num">1</span>); i++)           <span class="cm">// n-1 جولة</span>
+    {
+        <span class="kw">for</span> (<span class="type">int</span> j = n-<span class="num">1</span>; j &gt; i; j--)         <span class="cm">// من الآخر للأمام</span>
+        {
+            <span class="kw">if</span> (data[j] &lt; data[j-<span class="num">1</span>])          <span class="cm">// مقارنة</span>
+            {
+                temp = data[j];
+                data[j] = data[j-<span class="num">1</span>];
+                data[j-<span class="num">1</span>] = temp;              <span class="cm">// تبادل</span>
+            }
+        }
+    }
+}</pre>
+
+  <div class="interactive">
+    <h3>🧪 تجربة تفاعلية — Bubble Sort</h3>
+    <div class="controls">
+      <input type="text" id="bubble-input" value="64,34,25,12,22,11,90" style="width:240px;" placeholder="أرقام مفصولة بفاصلة">
+      <button class="btn btn-cyan" onclick="sortInit('bubble')">▶ ابدأ</button>
+      <button class="btn btn-green" onclick="sortStep('bubble')">👣 خطوة</button>
+      <button class="btn btn-orange" onclick="sortAuto('bubble')">⚡ تلقائي</button>
+      <button class="btn btn-purple" onclick="sortReset('bubble')">↺ إعادة</button>
+    </div>
+    <div class="step-info">
+      <span class="step-badge" id="bubble-step">جاهز</span>
+      <span style="color:var(--text2);font-size:0.78rem;" id="bubble-info"></span>
+    </div>
+    <div class="array-viz" id="bubble-viz"></div>
+    <div class="log-box" id="bubble-log"><span class="log-line">أدخل الأرقام واضغط ابدأ...</span></div>
+  </div>
+</div>
+
+<!-- INSERTION SORT PAGE -->
+<div class="page" id="page-insertion">
+  <div class="page-header">
+    <h2>📥 Insertion Sort — الترتيب بالإدراج</h2>
+    <p>يبني الجزء المرتّب تدريجياً بإدراج كل عنصر في مكانه الصحيح، مثل ترتيب ورق اللعب.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="theory">
+      <h4>📊 التعقيد الزمني</h4>
+      <ul>
+        <li>أسوأ حالة: <strong style="color:var(--red)">O(n²)</strong></li>
+        <li>أفضل حالة (مرتّب): <strong style="color:var(--green)">O(n)</strong></li>
+        <li>فعّال لمصفوفات صغيرة أو شبه مرتّبة</li>
+      </ul>
+    </div>
+    <div class="theory">
+      <h4>🃏 الفكرة</h4>
+      <ul>
+        <li>اختر عنصراً (key)</li>
+        <li>قارنه بالعناصر المرتّبة قبله</li>
+        <li>أزح العناصر الأكبر يميناً</li>
+        <li>ضع key في المكان الصحيح</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><span class="type">void</span> <span class="fn">insertionSort</span>(<span class="type">int</span> data[], <span class="type">int</span> n)
+{
+    <span class="type">int</span> i, key, j;
+    <span class="kw">for</span> (i = <span class="num">1</span>; i &lt; n; i++)
+    {
+        key = data[i];                              <span class="cm">// العنصر المراد إدراجه</span>
+        <span class="kw">for</span> (j = i; j &gt; <span class="num">0</span> &amp;&amp; key &lt; data[j-<span class="num">1</span>]; j--)
+            data[j] = data[j-<span class="num">1</span>];                  <span class="cm">// إزاحة للأمام</span>
+        data[j] = key;                              <span class="cm">// الموضع الصحيح</span>
+    }
+}</pre>
+
+  <div class="interactive">
+    <h3>🧪 تجربة تفاعلية — Insertion Sort</h3>
+    <div class="controls">
+      <input type="text" id="insertion-input" value="12,11,13,5,6" style="width:220px;" placeholder="أرقام مفصولة بفاصلة">
+      <button class="btn btn-cyan" onclick="sortInit('insertion')">▶ ابدأ</button>
+      <button class="btn btn-green" onclick="sortStep('insertion')">👣 خطوة</button>
+      <button class="btn btn-orange" onclick="sortAuto('insertion')">⚡ تلقائي</button>
+      <button class="btn btn-purple" onclick="sortReset('insertion')">↺ إعادة</button>
+    </div>
+    <div class="step-info">
+      <span class="step-badge" id="insertion-step">جاهز</span>
+      <span style="color:var(--text2);font-size:0.78rem;" id="insertion-info"></span>
+    </div>
+    <div class="array-viz" id="insertion-viz"></div>
+    <div class="log-box" id="insertion-log"><span class="log-line">أدخل الأرقام واضغط ابدأ...</span></div>
+  </div>
+</div>
+
+<!-- QUICK SORT PAGE -->
+<div class="page" id="page-quick">
+  <div class="page-header">
+    <h2>⚡ Quick Sort — الترتيب السريع</h2>
+    <p>يختار عنصراً محورياً (Pivot) ويقسم المصفوفة حوله، ثم يُطبَّق بشكل تكراري على الأجزاء. أسرع خوارزمية عملياً في المتوسط.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="theory">
+      <h4>📊 التعقيد الزمني</h4>
+      <ul>
+        <li>متوسط: <strong style="color:var(--green)">O(n log n)</strong></li>
+        <li>أسوأ حالة: <strong style="color:var(--red)">O(n²)</strong> إذا كان المحور الأسوأ دائماً</li>
+        <li>أفضل عملياً لأنه In-Place و Cache-Friendly</li>
+      </ul>
+    </div>
+    <div class="theory">
+      <h4>🎯 خطوات القسمة</h4>
+      <ul>
+        <li>اختر المحور Pivot (عادة العنصر الأول)</li>
+        <li>حرّك lower و upper نحو بعضهما</li>
+        <li>ضع ما < pivot يساراً وما > يميناً</li>
+        <li>ضع pivot في مكانه الصحيح</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><span class="type">void</span> <span class="fn">quickSort</span>(<span class="type">int</span> data[], <span class="type">int</span> first, <span class="type">int</span> last)
+{
+    <span class="kw">while</span> (last &gt; first) {
+        <span class="type">int</span> lower = first, upper = last;
+        <span class="type">int</span> bound = data[first];              <span class="cm">// المحور = أول عنصر</span>
+        <span class="kw">while</span> (lower &lt; upper) {
+            <span class="kw">while</span> (data[upper] &gt; bound) upper--;
+            data[lower] = data[upper];
+            <span class="kw">while</span> (lower &lt; upper &amp;&amp; data[lower] &lt;= bound) lower++;
+            data[upper] = data[lower];
+        }
+        data[lower] = bound;                  <span class="cm">// ضع المحور في مكانه</span>
+        <span class="fn">quickSort</span>(data, first, lower-<span class="num">1</span>);      <span class="cm">// الجزء الأيسر</span>
+        first = lower + <span class="num">1</span>;                   <span class="cm">// الجزء الأيمن</span>
+    }
+}</pre>
+
+  <div class="interactive">
+    <h3>🧪 تجربة تفاعلية — Quick Sort</h3>
+    <div class="controls">
+      <input type="text" id="quick-input" value="3,6,8,10,1,2,1" style="width:220px;" placeholder="أرقام مفصولة بفاصلة">
+      <button class="btn btn-cyan" onclick="sortInit('quick')">▶ ابدأ</button>
+      <button class="btn btn-green" onclick="sortStep('quick')">👣 خطوة</button>
+      <button class="btn btn-orange" onclick="sortAuto('quick')">⚡ تلقائي</button>
+      <button class="btn btn-purple" onclick="sortReset('quick')">↺ إعادة</button>
+    </div>
+    <div class="step-info">
+      <span class="step-badge" id="quick-step">جاهز</span>
+      <span style="color:var(--text2);font-size:0.78rem;" id="quick-info"></span>
+    </div>
+    <div class="array-viz" id="quick-viz"></div>
+    <div class="log-box" id="quick-log"><span class="log-line">أدخل الأرقام واضغط ابدأ...</span></div>
+  </div>
+</div>
+
+<!-- LINEAR SEARCH PAGE -->
+<div class="page" id="page-linear-search">
+  <div class="page-header">
+    <h2>🔎 البحث التسلسلي — Sequential Search</h2>
+    <p>أبسط خوارزمية بحث: تبحث في كل عنصر من البداية حتى النهاية حتى تجد المطلوب.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="theory">
+      <h4>📊 التعقيد</h4>
+      <ul>
+        <li>أسوأ حالة (لم يُوجد): <strong style="color:var(--red)">O(n)</strong></li>
+        <li>أفضل حالة (أول عنصر): <strong style="color:var(--green)">O(1)</strong></li>
+        <li>لا يشترط أن تكون المصفوفة مرتبة</li>
+      </ul>
+    </div>
+    <div class="theory">
+      <h4>✅ متى نستخدمه؟</h4>
+      <ul>
+        <li>المصفوفة صغيرة أو غير مرتّبة</li>
+        <li>البحث مرة واحدة فقط</li>
+        <li>بسيط وسهل التطبيق</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><span class="type">void</span> <span class="fn">sequentialsearch</span>(<span class="type">int</span> arr[], <span class="type">int</span> size, <span class="type">int</span> k)
+{
+    <span class="type">int</span> i, pos = -<span class="num">1</span>;
+    <span class="kw">for</span> (i = <span class="num">0</span>; i &lt; size; i++)
+    {
+        <span class="kw">if</span> (arr[i] == k)
+            pos = i;
+    }
+    <span class="kw">if</span> (pos == -<span class="num">1</span>)
+        cout &lt;&lt; <span class="str">"العنصر غير موجود"</span>;
+    <span class="kw">else</span>
+        cout &lt;&lt; <span class="str">"وُجد في الموضع "</span> &lt;&lt; pos;
+}</pre>
+
+  <div class="interactive">
+    <h3>🧪 تجربة تفاعلية — Sequential Search</h3>
+    <div class="controls">
+      <input type="text" id="seq-arr" value="14,7,23,5,18,31,9" style="width:220px;" placeholder="المصفوفة">
+      <input type="number" id="seq-key" value="18" style="width:80px;" placeholder="البحث عن">
+      <button class="btn btn-cyan" onclick="searchInit('seq')">▶ ابدأ</button>
+      <button class="btn btn-green" onclick="searchStep('seq')">👣 خطوة</button>
+      <button class="btn btn-orange" onclick="searchAuto('seq')">⚡ تلقائي</button>
+      <button class="btn btn-purple" onclick="searchReset('seq')">↺ إعادة</button>
+    </div>
+    <div class="step-info">
+      <span class="step-badge" id="seq-step">جاهز</span>
+    </div>
+    <div class="array-viz" id="seq-viz"></div>
+    <div class="log-box" id="seq-log"><span class="log-line">أدخل المصفوفة والقيمة المطلوبة...</span></div>
+  </div>
+</div>
+
+<!-- BINARY SEARCH PAGE -->
+<div class="page" id="page-binary-search">
+  <div class="page-header">
+    <h2>⚡ البحث الثنائي — Binary Search</h2>
+    <p>يقسّم المصفوفة المرتّبة نصفين في كل خطوة ويحدد في أي نصف يوجد العنصر. أسرع بكثير من التسلسلي.</p>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:20px;">
+    <div class="theory">
+      <h4>📊 التعقيد</h4>
+      <ul>
+        <li>أسوأ حالة: <strong style="color:var(--green)">O(log n)</strong></li>
+        <li>أفضل حالة (المنتصف): <strong style="color:var(--green)">O(1)</strong></li>
+        <li><strong style="color:var(--orange)">يشترط أن تكون المصفوفة مرتّبة!</strong></li>
+      </ul>
+    </div>
+    <div class="theory">
+      <h4>🎯 الخوارزمية</h4>
+      <ul>
+        <li>mid = (lower + upper) / 2</li>
+        <li>إذا key == data[mid] → وُجد!</li>
+        <li>إذا key < data[mid] → ابحث يساراً (upper = mid-1)</li>
+        <li>إذا key > data[mid] → ابحث يميناً (lower = mid+1)</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><span class="type">int</span> <span class="fn">binarySearch</span>(<span class="type">int</span> data[], <span class="type">int</span> k, <span class="type">int</span> lower, <span class="type">int</span> upper)
+{
+    <span class="type">int</span> pos = -<span class="num">1</span>, mid;
+    <span class="kw">if</span> (lower &lt;= upper) {
+        mid = (lower + upper) / <span class="num">2</span>;
+        <span class="kw">if</span> (k == data[mid]) {
+            <span class="kw">return</span> mid;                          <span class="cm">// وُجد!</span>
+        } <span class="kw">else if</span> (k &lt; data[mid])
+            <span class="kw">return</span> <span class="fn">binarySearch</span>(data, k, lower, mid-<span class="num">1</span>);  <span class="cm">// يسار</span>
+        <span class="kw">else</span>
+            <span class="kw">return</span> <span class="fn">binarySearch</span>(data, k, mid+<span class="num">1</span>, upper); <span class="cm">// يمين</span>
+    }
+    <span class="kw">return</span> -<span class="num">1</span>;                                 <span class="cm">// لم يُوجد</span>
+}</pre>
+
+  <div class="interactive">
+    <h3>🧪 تجربة تفاعلية — Binary Search</h3>
+    <div class="controls">
+      <input type="text" id="bin-arr" value="2,5,8,12,16,23,38,56,72,91" style="width:280px;" placeholder="مصفوفة مرتّبة">
+      <input type="number" id="bin-key" value="23" style="width:80px;" placeholder="البحث عن">
+      <button class="btn btn-cyan" onclick="searchInit('bin')">▶ ابدأ</button>
+      <button class="btn btn-green" onclick="searchStep('bin')">👣 خطوة</button>
+      <button class="btn btn-orange" onclick="searchAuto('bin')">⚡ تلقائي</button>
+      <button class="btn btn-purple" onclick="searchReset('bin')">↺ إعادة</button>
+    </div>
+    <div class="step-info">
+      <span class="step-badge" id="bin-step">جاهز</span>
+    </div>
+    <div class="array-viz" id="bin-viz"></div>
+    <div class="log-box" id="bin-log"><span class="log-line">أدخل مصفوفة مرتّبة والقيمة المطلوبة...</span></div>
+  </div>
+</div>
+
+</main>
+
+<script>
+/* ===== NAVIGATION ===== */
+function goto(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  // Trigger page init
+  if (id === 'tree') drawExampleTree();
+  if (id === 'binary-tree') { drawBinaryTree(); buildArrayRep(); }
+  if (id === 'graph') drawSampleGraph('undirected');
+  if (id === 'bst') { bstRoot = null; bstDrawTree(); }
+}
+
+function switchTab(group, tab) {
+  document.querySelectorAll(`[id^="${group}-"]`).forEach(el => {
+    if (el.classList.contains('tab-content')) el.classList.remove('active');
+  });
+  document.getElementById(group + '-' + tab).classList.add('active');
+  const buttons = event.currentTarget.parentElement.querySelectorAll('.tab-btn');
+  buttons.forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+/* ===== LOG UTILITY ===== */
+function log(id, msg, cls='') {
+  const el = document.getElementById(id);
+  el.innerHTML += `<div class="log-line ${cls}">${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+}
+function clearLog(id) {
+  document.getElementById(id).innerHTML = '';
+}
+
+/* ===== RECURSION ===== */
+let factSteps = [], factIdx = 0;
+
+function runFactorial() {
+  const n = parseInt(document.getElementById('fact-n').value);
+  clearLog('fact-log');
+  document.getElementById('fact-stack').innerHTML = '';
+  document.getElementById('fact-result').textContent = '';
+  let steps = [];
+  function fact(x, depth) {
+    steps.push({type:'call', n:x, depth});
+    if (x <= 1) { steps.push({type:'ret', n:x, val:1, depth}); return 1; }
+    const res = x * fact(x-1, depth+1);
+    steps.push({type:'ret', n:x, val:res, depth});
+    return res;
+  }
+  const result = fact(n, 0);
+  steps.forEach(s => {
+    if (s.type === 'call') log('fact-log', `↓ استدعاء factorial(${s.n})`, 'highlight');
+    else log('fact-log', `↑ تُرجع ${s.val} من factorial(${s.n})`, 'success');
+  });
+  document.getElementById('fact-result').textContent = `النتيجة: ${n}! = ${result}`;
+  document.getElementById('fact-step').textContent = `${n}! = ${result}`;
+}
+
+function stepFactorial() {
+  const n = parseInt(document.getElementById('fact-n').value);
+  if (factIdx === 0) {
+    clearLog('fact-log');
+    document.getElementById('fact-stack').innerHTML = '';
+    factSteps = [];
+    function fact(x, depth) {
+      factSteps.push({type:'call', n:x, depth});
+      if (x <= 1) { factSteps.push({type:'ret', n:x, val:1, depth}); return 1; }
+      const res = x * fact(x-1, depth+1);
+      factSteps.push({type:'ret', n:x, val:res, depth});
+      return res;
+    }
+    fact(n, 0);
+  }
+  if (factIdx >= factSteps.length) { factIdx = 0; return; }
+  const s = factSteps[factIdx++];
+  const stack = document.getElementById('fact-stack');
+  if (s.type === 'call') {
+    stack.innerHTML += `<div class="stack-frame">factorial(${s.n})</div>`;
+    log('fact-log', `▶ استدعاء factorial(${s.n})`, 'highlight');
+    document.getElementById('fact-step').textContent = `خطوة ${factIdx} من ${factSteps.length}`;
+  } else {
+    const frames = stack.querySelectorAll('.stack-frame');
+    if (frames.length > 0) frames[frames.length-1].remove();
+    log('fact-log', `◀ تُرجع ${s.val} من factorial(${s.n})`, 'success');
+    if (factIdx >= factSteps.length) {
+      document.getElementById('fact-result').textContent = `النتيجة: ${n}! = ${s.val}`;
+      document.getElementById('fact-step').textContent = `✅ اكتمل: ${n}! = ${s.val}`;
+    }
+  }
+}
+
+function resetFactorial() {
+  factSteps = []; factIdx = 0;
+  clearLog('fact-log'); log('fact-log', 'تمت الإعادة...', '');
+  document.getElementById('fact-stack').innerHTML = '';
+  document.getElementById('fact-result').textContent = '';
+  document.getElementById('fact-step').textContent = 'جاهز';
+}
+
+function runPower() {
+  const x = parseInt(document.getElementById('pow-x').value);
+  const m = parseInt(document.getElementById('pow-m').value);
+  clearLog('pow-log');
+  function power(x, m) {
+    if (m === 0) { log('pow-log', `power(${x}, 0) → 1 [الحالة الأساسية]`, 'success'); return 1; }
+    log('pow-log', `power(${x}, ${m}) → ${x} × power(${x}, ${m-1})`, 'highlight');
+    const res = x * power(x, m-1);
+    log('pow-log', `power(${x}, ${m}) = ${res}`, 'success');
+    return res;
+  }
+  const result = power(x, m);
+  log('pow-log', `\n✅ النتيجة: ${x}^${m} = ${result}`, 'success');
+}
+
+function runFib() {
+  const n = parseInt(document.getElementById('fib-n').value);
+  clearLog('fib-log');
+  let seq = [];
+  for (let i = 0; i <= n; i++) {
+    if (i === 0) seq.push(0);
+    else if (i === 1) seq.push(1);
+    else seq.push(seq[i-1] + seq[i-2]);
+  }
+  log('fib-log', `متتالية فيبوناتشي حتى F(${n}):`, 'highlight');
+  log('fib-log', seq.join(' → '), 'success');
+  for (let i = 2; i <= n; i++) {
+    log('fib-log', `F(${i}) = F(${i-1}) + F(${i-2}) = ${seq[i-1]} + ${seq[i-2]} = ${seq[i]}`);
+  }
+  log('fib-log', `✅ F(${n}) = ${seq[n]}`, 'success');
+}
+
+/* ===== GRAPH ===== */
+function drawSampleGraph(type) {
+  const svg = document.getElementById('graph-svg');
+  svg.innerHTML = '';
+  const nodes = {
+    A: {x:300, y:60}, B: {x:160, y:160}, C: {x:440, y:160},
+    D: {x:230, y:270}, E: {x:370, y:270}
+  };
+  const edges = type === 'directed'
+    ? [{f:'A',t:'B'},{f:'A',t:'C'},{f:'A',t:'D'},{f:'B',t:'D'},{f:'C',t:'D'},{f:'B',t:'E'},{f:'D',t:'E'}]
+    : [{f:'A',t:'B'},{f:'A',t:'C'},{f:'A',t:'D'},{f:'B',t:'D'},{f:'C',t:'D'},{f:'B',t:'E'},{f:'D',t:'E'}];
+
+  if (type === 'directed') {
+    svg.innerHTML += `<defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#00d4ff"/></marker></defs>`;
+  }
+
+  edges.forEach(e => {
+    const x1=nodes[e.f].x, y1=nodes[e.f].y, x2=nodes[e.t].x, y2=nodes[e.t].y;
+    const dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+    const ex = x2 - dx/len*22, ey = y2 - dy/len*22;
+    svg.innerHTML += `<line x1="${x1}" y1="${y1}" x2="${ex}" y2="${ey}" stroke="#1e2d40" stroke-width="1.5" ${type==='directed'?'marker-end="url(#arr)"':''}/>`;
+  });
+
+  Object.entries(nodes).forEach(([n, pos]) => {
+    svg.innerHTML += `<circle cx="${pos.x}" cy="${pos.y}" r="20" fill="#0f1923" stroke="#00d4ff" stroke-width="2"/>
+      <text x="${pos.x}" y="${pos.y+5}" text-anchor="middle" fill="#00d4ff" font-family="Cairo" font-weight="700" font-size="14">${n}</text>`;
+  });
+
+  document.getElementById('graph-info').textContent =
+    `${type === 'directed' ? 'جراف موجه' : 'جراف غير موجه'} — V = {A,B,C,D,E}، E = 7 حواف`;
+}
+
+/* ===== TREE ===== */
+function drawExampleTree() {
+  const svg = document.getElementById('tree-svg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  const nodes = {
+    A:{x:340,y:40,parent:null},
+    B:{x:180,y:100,parent:'A'},C:{x:500,y:100,parent:'A'},
+    D:{x:90,y:175,parent:'B'},E:{x:200,y:175,parent:'B'},F:{x:290,y:175,parent:'B'},
+    G:{x:430,y:175,parent:'C'},H:{x:570,y:175,parent:'C'},
+    I:{x:60,y:250,parent:'E'},J:{x:170,y:250,parent:'E'},K:{x:390,y:250,parent:'G'}
+  };
+  const leaves = ['D','F','H','I','J','K'];
+  const parents = ['A','B','C','E','G'];
+
+  Object.entries(nodes).forEach(([n,nd]) => {
+    if (nd.parent) {
+      const p = nodes[nd.parent];
+      svg.innerHTML += `<line x1="${p.x}" y1="${p.y}" x2="${nd.x}" y2="${nd.y}" stroke="#1e2d40" stroke-width="1.5"/>`;
+    }
+  });
+  Object.entries(nodes).forEach(([n,nd]) => {
+    const color = parents.includes(n) ? '#00ff88' : leaves.includes(n) ? '#ff6b35' : '#00d4ff';
+    svg.innerHTML += `<circle cx="${nd.x}" cy="${nd.y}" r="20" fill="#0f1923" stroke="${color}" stroke-width="2"/>
+      <text x="${nd.x}" y="${nd.y+5}" text-anchor="middle" fill="${color}" font-family="Cairo" font-weight="700" font-size="13">${n}</text>`;
+  });
+}
+
+/* ===== BINARY TREE ===== */
+const btNodes = {
+  A:{x:320,y:30,left:'B',right:'C'},
+  B:{x:160,y:100,left:'D',right:'F'},
+  C:{x:480,y:100,left:'G',right:'H'},
+  D:{x:70,y:175,left:'I',right:'J'},
+  F:{x:250,y:175,left:null,right:null},
+  G:{x:390,y:175,left:null,right:'K'},
+  H:{x:570,y:175,left:null,right:null},
+  I:{x:30,y:250,left:null,right:null},
+  J:{x:110,y:250,left:null,right:null},
+  K:{x:430,y:250,left:null,right:null}
+};
+
+function drawBinaryTree(highlight=[]) {
+  const svg = document.getElementById('bt-svg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  Object.entries(btNodes).forEach(([n,nd]) => {
+    if (nd.left && btNodes[nd.left]) {
+      const c=btNodes[nd.left];
+      svg.innerHTML += `<line x1="${nd.x}" y1="${nd.y}" x2="${c.x}" y2="${c.y}" stroke="#1e2d40" stroke-width="1.5"/>`;
+    }
+    if (nd.right && btNodes[nd.right]) {
+      const c=btNodes[nd.right];
+      svg.innerHTML += `<line x1="${nd.x}" y1="${nd.y}" x2="${c.x}" y2="${c.y}" stroke="#1e2d40" stroke-width="1.5"/>`;
+    }
+  });
+  Object.entries(btNodes).forEach(([n,nd]) => {
+    const idx = highlight.indexOf(n);
+    const color = idx >= 0 ? '#ffd60a' : '#00d4ff';
+    const fill = idx >= 0 ? 'rgba(255,214,10,0.2)' : '#0f1923';
+    svg.innerHTML += `<circle cx="${nd.x}" cy="${nd.y}" r="20" fill="${fill}" stroke="${color}" stroke-width="2" id="bt-${n}"/>
+      <text x="${nd.x}" y="${nd.y+5}" text-anchor="middle" fill="${color}" font-family="Cairo" font-weight="700" font-size="13" id="btt-${n}">${n}</text>`;
+  });
+}
+
+let traversalTimers = [];
+function traverseTree(type) {
+  traversalTimers.forEach(t => clearTimeout(t));
+  traversalTimers = [];
+  clearLog('bt-log');
+  drawBinaryTree();
+  const order = [];
+  function inorder(n) { if (!n || !btNodes[n]) return; inorder(btNodes[n].left); order.push(n); inorder(btNodes[n].right); }
+  function preorder(n) { if (!n || !btNodes[n]) return; order.push(n); preorder(btNodes[n].left); preorder(btNodes[n].right); }
+  function postorder(n) { if (!n || !btNodes[n]) return; postorder(btNodes[n].left); postorder(btNodes[n].right); order.push(n); }
+  if (type==='inorder') inorder('A');
+  else if (type==='preorder') preorder('A');
+  else postorder('A');
+
+  const labels = {inorder:'In-Order (يسار→جذر→يمين)', preorder:'Pre-Order (جذر→يسار→يمين)', postorder:'Post-Order (يسار→يمين→جذر)'};
+  log('bt-log', labels[type] + ':', 'highlight');
+
+  order.forEach((n, i) => {
+    const t = setTimeout(() => {
+      drawBinaryTree(order.slice(0, i+1));
+      log('bt-log', `${i+1}. زيارة ${n}`, 'success');
+    }, i * 500);
+    traversalTimers.push(t);
+  });
+  setTimeout(() => {
+    log('bt-log', `\n✅ النتيجة: ${order.join(' → ')}`, 'success');
+  }, order.length * 500 + 100);
+}
+
+function buildArrayRep() {
+  const el = document.getElementById('array-rep');
+  if (!el) return;
+  const arr = ['', 'A','B','C','D','F','G','H','I','J','-','-','-','K','-','-'];
+  el.innerHTML = '';
+  arr.slice(1).forEach((v, i) => {
+    el.innerHTML += `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+      <div style="width:40px;height:40px;background:${v!=='-'?'rgba(0,212,255,0.1)':'var(--bg2)'};border:1px solid ${v!=='-'?'var(--cyan)':'var(--border)'};border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:JetBrains Mono,monospace;font-size:0.85rem;color:${v!=='-'?'var(--cyan)':'var(--text2)'};">${v}</div>
+      <div style="font-size:0.6rem;color:var(--text2);">${i+1}</div>
+    </div>`;
+  });
+}
+
+/* ===== BST ===== */
+let bstRoot = null;
+
+class BSTNode {
+  constructor(val) { this.val = val; this.left = null; this.right = null; }
+}
+
+function bstInsertNode(root, val) {
+  if (!root) return new BSTNode(val);
+  if (val < root.val) root.left = bstInsertNode(root.left, val);
+  else if (val > root.val) root.right = bstInsertNode(root.right, val);
+  return root;
+}
+
+function bstDeleteNode(root, val) {
+  if (!root) return null;
+  if (val < root.val) root.left = bstDeleteNode(root.left, val);
+  else if (val > root.val) root.right = bstDeleteNode(root.right, val);
+  else {
+    if (!root.left) return root.right;
+    if (!root.right) return root.left;
+    let min = root.right;
+    while (min.left) min = min.left;
+    root.val = min.val;
+    root.right = bstDeleteNode(root.right, min.val);
+  }
+  return root;
+}
+
+function bstInsert() {
+  const val = parseInt(document.getElementById('bst-val').value);
+  if (isNaN(val)) return;
+  bstRoot = bstInsertNode(bstRoot, val);
+  clearLog('bst-log');
+  log('bst-log', `✅ تم إدراج ${val} في الشجرة`, 'success');
+  bstDrawTree();
+}
+
+function bstDelete() {
+  const val = parseInt(document.getElementById('bst-val').value);
+  if (isNaN(val)) return;
+  bstRoot = bstDeleteNode(bstRoot, val);
+  clearLog('bst-log');
+  log('bst-log', `🗑️ تم حذف ${val} من الشجرة`, 'warn');
+  bstDrawTree();
+}
+
+function bstReset() {
+  bstRoot = null; bstDrawTree();
+  clearLog('bst-log'); log('bst-log', 'تمت الإعادة...', '');
+}
+
+function bstLoadExample() {
+  bstRoot = null;
+  [5,9,7,3,8,12,6,4,20].forEach(v => bstRoot = bstInsertNode(bstRoot, v));
+  clearLog('bst-log');
+  log('bst-log', 'مثال الملزمة: 5,9,7,3,8,12,6,4,20', 'highlight');
+  log('bst-log', '✅ تم بناء الشجرة', 'success');
+  bstDrawTree();
+}
+
+function bstTraverse(type) {
+  clearLog('bst-log');
+  const order = [];
+  function inorder(n) { if (!n) return; inorder(n.left); order.push(n.val); inorder(n.right); }
+  function preorder(n) { if (!n) return; order.push(n.val); preorder(n.left); preorder(n.right); }
+  function postorder(n) { if (!n) return; postorder(n.left); postorder(n.right); order.push(n.val); }
+  if (type==='inorder') inorder(bstRoot);
+  else if (type==='preorder') preorder(bstRoot);
+  else postorder(bstRoot);
+  const names = {inorder:'In-Order', preorder:'Pre-Order', postorder:'Post-Order'};
+  log('bst-log', `${names[type]}: ${order.join(' → ')}`, 'success');
+  if (type === 'inorder') log('bst-log', '💡 In-Order في BST يعطي ترتيباً تصاعدياً دائماً!', 'highlight');
+}
+
+function bstDrawTree(highlight=[]) {
+  const svg = document.getElementById('bst-svg');
+  if (!svg) return;
+  svg.innerHTML = '';
+  if (!bstRoot) { svg.innerHTML = `<text x="380" y="160" text-anchor="middle" fill="#546e7a" font-family="Cairo" font-size="14">الشجرة فارغة — أدخل أرقاماً لبنائها</text>`; return; }
+
+  const positions = {};
+  let xCounter = 0;
+
+  function calcPos(node, depth) {
+    if (!node) return;
+    calcPos(node.left, depth+1);
+    positions[node.val] = {x: 40 + xCounter * 65, y: 30 + depth * 70};
+    xCounter++;
+    calcPos(node.right, depth+1);
+  }
+  calcPos(bstRoot, 0);
+
+  function drawEdges(node) {
+    if (!node) return;
+    const p = positions[node.val];
+    if (node.left) {
+      const c = positions[node.left.val];
+      svg.innerHTML += `<line x1="${p.x}" y1="${p.y}" x2="${c.x}" y2="${c.y}" stroke="#1e2d40" stroke-width="1.5"/>`;
+      drawEdges(node.left);
+    }
+    if (node.right) {
+      const c = positions[node.right.val];
+      svg.innerHTML += `<line x1="${p.x}" y1="${p.y}" x2="${c.x}" y2="${c.y}" stroke="#1e2d40" stroke-width="1.5"/>`;
+      drawEdges(node.right);
+    }
+  }
+  drawEdges(bstRoot);
+
+  Object.entries(positions).forEach(([val, pos]) => {
+    const isHL = highlight.includes(parseInt(val));
+    const color = isHL ? '#ffd60a' : '#a855f7';
+    svg.innerHTML += `<circle cx="${pos.x}" cy="${pos.y}" r="22" fill="${isHL?'rgba(255,214,10,0.15)':'rgba(168,85,247,0.1)'}" stroke="${color}" stroke-width="2"/>
+      <text x="${pos.x}" y="${pos.y+5}" text-anchor="middle" fill="${color}" font-family="JetBrains Mono,monospace" font-weight="700" font-size="13">${val}</text>`;
+  });
+
+  // Adjust viewBox
+  const maxX = Math.max(...Object.values(positions).map(p=>p.x));
+  const maxY = Math.max(...Object.values(positions).map(p=>p.y));
+  svg.setAttribute('width', Math.max(760, maxX + 60));
+  svg.setAttribute('height', Math.max(300, maxY + 60));
+}
+
+/* ===== SORTING ENGINE ===== */
+const sortState = {};
+
+function sortInit(type) {
+  const inputId = type + '-input';
+  const arr = document.getElementById(inputId).value.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+  sortState[type] = {
+    arr: [...arr], orig: [...arr], steps: [], idx: 0, timer: null
+  };
+  generateSortSteps(type);
+  renderArray(type + '-viz', sortState[type].arr, []);
+  clearLog(type + '-log');
+  log(type + '-log', `المصفوفة: [${arr.join(', ')}]`, 'highlight');
+  document.getElementById(type + '-step').textContent = `0 / ${sortState[type].steps.length} خطوة`;
+  if (type === 'insertion' || type === 'bubble') document.getElementById(type + '-info').textContent = '';
+}
+
+function generateSortSteps(type) {
+  const arr = [...sortState[type].arr];
+  const steps = [];
+  const n = arr.length;
+
+  if (type === 'bubble') {
+    for (let i = 0; i < n-1; i++) {
+      for (let j = n-1; j > i; j--) {
+        steps.push({type:'compare', arr:[...arr], j1:j, j2:j-1, i});
+        if (arr[j] < arr[j-1]) {
+          [arr[j], arr[j-1]] = [arr[j-1], arr[j]];
+          steps.push({type:'swap', arr:[...arr], j1:j, j2:j-1, i});
+        }
+      }
+      steps.push({type:'pass', arr:[...arr], sorted:n-1-i, i});
+    }
+    steps.push({type:'done', arr:[...arr]});
+  }
+  else if (type === 'insertion') {
+    for (let i = 1; i < n; i++) {
+      const key = arr[i];
+      steps.push({type:'pick', arr:[...arr], key, i});
+      let j = i;
+      while (j > 0 && key < arr[j-1]) {
+        steps.push({type:'compare', arr:[...arr], j1:j, j2:j-1, key, i});
+        arr[j] = arr[j-1];
+        steps.push({type:'shift', arr:[...arr], j, key, i});
+        j--;
+      }
+      arr[j] = key;
+      steps.push({type:'place', arr:[...arr], j, key, i});
+    }
+    steps.push({type:'done', arr:[...arr]});
+  }
+  else if (type === 'quick') {
+    function qs(arr, first, last, steps) {
+      if (last <= first) return;
+      let lower = first, upper = last;
+      const bound = arr[first];
+      steps.push({type:'pivot', arr:[...arr], pivot:first, lower, upper, bound});
+      while (lower < upper) {
+        while (arr[upper] > bound) { upper--; steps.push({type:'move-upper', arr:[...arr], lower, upper, bound, first, last}); }
+        arr[lower] = arr[upper];
+        steps.push({type:'copy-upper', arr:[...arr], lower, upper, bound, first, last});
+        while (lower < upper && arr[lower] <= bound) { lower++; if(lower<upper) steps.push({type:'move-lower', arr:[...arr], lower, upper, bound, first, last}); }
+        arr[upper] = arr[lower];
+        if (lower < upper) steps.push({type:'copy-lower', arr:[...arr], lower, upper, bound, first, last});
+      }
+      arr[lower] = bound;
+      steps.push({type:'place-pivot', arr:[...arr], pivotFinal:lower, bound, first, last});
+      qs(arr, first, lower-1, steps);
+      qs(arr, lower+1, last, steps);
+    }
+    qs(arr, 0, n-1, steps);
+    steps.push({type:'done', arr:[...arr]});
+  }
+  sortState[type].steps = steps;
+  sortState[type].arr = [...sortState[type].orig];
+}
+
+function sortStep(type) {
+  const s = sortState[type];
+  if (!s || !s.steps.length) return;
+  if (s.idx >= s.steps.length) { s.idx = 0; return; }
+  const step = s.steps[s.idx++];
+  applyStep(type, step);
+  document.getElementById(type + '-step').textContent = `${s.idx} / ${s.steps.length} خطوة`;
+}
+
+function applyStep(type, step) {
+  const logId = type + '-log';
+  const vizId = type + '-viz';
+  if (step.type === 'compare') {
+    renderArray(vizId, step.arr, [], [step.j1, step.j2], []);
+    log(logId, `مقارنة: ${step.arr[step.j1]} vs ${step.arr[step.j2]}`);
+  } else if (step.type === 'swap') {
+    renderArray(vizId, step.arr, [], [], [step.j1, step.j2]);
+    log(logId, `🔄 تبادل: ${step.arr[step.j2]} ↔ ${step.arr[step.j1]}`, 'warn');
+  } else if (step.type === 'pass') {
+    const sorted = [];
+    for (let i = step.sorted; i < step.arr.length; i++) sorted.push(i);
+    renderArray(vizId, step.arr, sorted, [], []);
+    log(logId, `✅ انتهت الجولة ${step.i+1} — ${step.arr[step.sorted]} في مكانه الصحيح`, 'success');
+  } else if (step.type === 'pick') {
+    renderArray(vizId, step.arr, [], [], [], [step.i]);
+    log(logId, `🔑 المفتاح (key) = ${step.key}`, 'highlight');
+  } else if (step.type === 'shift') {
+    renderArray(vizId, step.arr, [], [step.j], [], []);
+    log(logId, `↙ إزاحة ${step.arr[step.j-1]} يميناً`);
+  } else if (step.type === 'place') {
+    renderArray(vizId, step.arr, [], [], [], [step.j]);
+    log(logId, `✅ إدراج ${step.key} في الموضع ${step.j}`, 'success');
+  } else if (step.type === 'pivot') {
+    renderArray(vizId, step.arr, [], [], [], [step.pivot]);
+    log(logId, `🎯 محور جديد (Pivot) = ${step.bound}`, 'highlight');
+  } else if (step.type.startsWith('move') || step.type.startsWith('copy')) {
+    renderArray(vizId, step.arr, [], [step.lower, step.upper], [], []);
+    log(logId, `lower=${step.lower} upper=${step.upper}`);
+  } else if (step.type === 'place-pivot') {
+    renderArray(vizId, step.arr, [step.pivotFinal], [], [], []);
+    log(logId, `✅ المحور ${step.bound} في موضعه النهائي ${step.pivotFinal}`, 'success');
+  } else if (step.type === 'done') {
+    renderArray(vizId, step.arr, step.arr.map((_,i)=>i), [], []);
+    log(logId, `🎉 اكتمل الترتيب: [${step.arr.join(', ')}]`, 'success');
+  }
+}
+
+function sortAuto(type) {
+  if (sortState[type]?.timer) { clearInterval(sortState[type].timer); sortState[type].timer = null; return; }
+  sortState[type].timer = setInterval(() => {
+    if (sortState[type].idx >= sortState[type].steps.length) {
+      clearInterval(sortState[type].timer); sortState[type].timer = null; return;
+    }
+    sortStep(type);
+  }, 400);
+}
+
+function sortReset(type) {
+  if (sortState[type]?.timer) { clearInterval(sortState[type].timer); }
+  sortState[type] = {};
+  document.getElementById(type + '-viz').innerHTML = '';
+  clearLog(type + '-log'); log(type + '-log', 'تمت الإعادة...', '');
+  document.getElementById(type + '-step').textContent = 'جاهز';
+}
+
+function renderArray(id, arr, sorted=[], comparing=[], swapping=[], current=[]) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = arr.map((v, i) => {
+    let cls = '';
+    if (sorted.includes(i)) cls = 'sorted';
+    else if (swapping.includes(i)) cls = 'swapping';
+    else if (comparing.includes(i)) cls = 'comparing';
+    else if (current.includes(i)) cls = 'current';
+    return `<div class="arr-cell">
+      <div class="arr-box ${cls}">${v}</div>
+      <div class="arr-idx">${i}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ===== SEARCH ENGINE ===== */
+const searchState = {};
+
+function searchInit(type) {
+  const arrId = type === 'bin' ? 'bin-arr' : 'seq-arr';
+  const keyId = type === 'bin' ? 'bin-key' : 'seq-key';
+  const arr = document.getElementById(arrId).value.split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
+  const key = parseInt(document.getElementById(keyId).value);
+  searchState[type] = { arr, key, steps: [], idx: 0, timer: null };
+  generateSearchSteps(type);
+  renderArray(type + '-viz', arr, []);
+  clearLog(type + '-log');
+  log(type + '-log', `البحث عن: ${key} في [${arr.join(', ')}]`, 'highlight');
+  document.getElementById(type + '-step').textContent = `0 / ${searchState[type].steps.length} خطوة`;
+}
+
+function generateSearchSteps(type) {
+  const { arr, key } = searchState[type];
+  const steps = [];
+
+  if (type === 'seq') {
+    for (let i = 0; i < arr.length; i++) {
+      steps.push({ type: 'check', i, found: arr[i] === key, arr: [...arr] });
+      if (arr[i] === key) break;
+    }
+    const found = arr.indexOf(key);
+    steps.push({ type: 'result', found: found !== -1, pos: found, arr: [...arr] });
+  } else {
+    let lower = 0, upper = arr.length - 1;
+    while (lower <= upper) {
+      const mid = Math.floor((lower + upper) / 2);
+      steps.push({ type: 'check', lower, upper, mid, arr: [...arr], key });
+      if (arr[mid] === key) { steps.push({ type: 'found', pos: mid, arr: [...arr] }); break; }
+      else if (key < arr[mid]) { upper = mid - 1; steps.push({ type: 'narrow', dir:'left', lower, upper, arr:[...arr] }); }
+      else { lower = mid + 1; steps.push({ type: 'narrow', dir:'right', lower, upper, arr:[...arr] }); }
+    }
+    if (!steps.find(s => s.type === 'found')) steps.push({ type: 'notfound', arr: [...arr] });
+  }
+  searchState[type].steps = steps;
+}
+
+function searchStep(type) {
+  const s = searchState[type];
+  if (!s?.steps.length) return;
+  if (s.idx >= s.steps.length) return;
+  const step = s.steps[s.idx++];
+  applySearchStep(type, step);
+  document.getElementById(type + '-step').textContent = `${s.idx} / ${s.steps.length} خطوة`;
+}
+
+function applySearchStep(type, step) {
+  const logId = type + '-log';
+  const vizId = type + '-viz';
+  const { arr } = step;
+
+  if (type === 'seq') {
+    if (step.type === 'check') {
+      if (step.found) {
+        renderArray(vizId, arr, [step.i], [], [], []);
+        log(logId, `✅ وُجد ${searchState[type].key} في الموضع ${step.i}!`, 'success');
+      } else {
+        renderArray(vizId, arr, [], [step.i], [], []);
+        log(logId, `✗ arr[${step.i}] = ${arr[step.i]} ≠ ${searchState[type].key}`);
+      }
+    } else if (step.type === 'result') {
+      if (!step.found) log(logId, `❌ العنصر غير موجود في المصفوفة`, 'warn');
+    }
+  } else {
+    if (step.type === 'check') {
+      const others = arr.map((_,i) => i).filter(i => i < step.lower || i > step.upper);
+      renderArray(vizId, arr, others, [], [], [step.mid]);
+      log(logId, `🔎 lower=${step.lower} mid=${step.mid} upper=${step.upper} | arr[mid]=${arr[step.mid]}`);
+    } else if (step.type === 'narrow') {
+      log(logId, `→ ${step.dir === 'left' ? 'ابحث يساراً' : 'ابحث يميناً'}: lower=${step.lower} upper=${step.upper}`, 'highlight');
+    } else if (step.type === 'found') {
+      renderArray(vizId, arr, [step.pos], [], [], []);
+      log(logId, `✅ وُجد في الموضع ${step.pos}!`, 'success');
+    } else if (step.type === 'notfound') {
+      log(logId, `❌ العنصر غير موجود`, 'warn');
+    }
+  }
+}
+
+function searchAuto(type) {
+  if (searchState[type]?.timer) { clearInterval(searchState[type].timer); searchState[type].timer = null; return; }
+  searchState[type].timer = setInterval(() => {
+    if (searchState[type].idx >= searchState[type].steps.length) {
+      clearInterval(searchState[type].timer); searchState[type].timer = null; return;
+    }
+    searchStep(type);
+  }, 600);
+}
+
+function searchReset(type) {
+  if (searchState[type]?.timer) clearInterval(searchState[type].timer);
+  searchState[type] = {};
+  document.getElementById(type + '-viz').innerHTML = '';
+  clearLog(type + '-log'); log(type + '-log', 'تمت الإعادة...', '');
+  document.getElementById(type + '-step').textContent = 'جاهز';
+}
+
+/* ===== INIT ===== */
+window.addEventListener('load', () => {
+  drawSampleGraph('undirected');
+});
+</script>
+</body>
+</html>
